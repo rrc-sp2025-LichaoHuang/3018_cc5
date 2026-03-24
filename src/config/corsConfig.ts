@@ -15,7 +15,7 @@ const corsOptions: CorsOptions = {
      * Allow requests from configured origins only.
      * Requests without an Origin header (such as Postman or curl) are also allowed.
      */
-    origin: (origin, callback) => {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
             return;
