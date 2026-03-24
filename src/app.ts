@@ -6,6 +6,12 @@ import {
 } from "./api/v1/middleware/logger";
 import errorHandler from "./api/v1/middleware/errorHandler";
 import resourceRoutes from "./api/v1/routes/resourceRoutes";
+import dotenv from "dotenv";
+import setupSwagger from "./config/swagger";
+
+
+// Load environment variables BEFORE your internal imports!
+dotenv.config();
 
 /** import the routes **/
 
@@ -27,4 +33,4 @@ app.use("/api/v1", resourceRoutes);
 
 app.use(errorHandler);
 
-export default app;
+setupSwagger(app);
