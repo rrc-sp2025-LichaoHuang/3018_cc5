@@ -42,7 +42,7 @@ const validateId = (idParam: string): number | null => {
     return id;
 };
 
-export const getHealthHandler = (_req: Request, res: Response): void => {
+export const getHealthHandler = async (_req: Request, res: Response): Promise<void> => {
     res.status(HTTP_STATUS.OK).json({
         status: "OK",
         uptime: process.uptime(),
@@ -51,43 +51,52 @@ export const getHealthHandler = (_req: Request, res: Response): void => {
     });
 };
 
-export const getAllResourcesHandler = (_req: Request, res: Response): void => {
-    const resources = getAllResources();
+export const getAllResourcesHandler = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const resources = await getAllResources();
 
-    res.status(HTTP_STATUS.OK).json({
-        message: "Resources retrieved",
-        count: resources.length,
-        data: resources
-    });
+        res.status(HTTP_STATUS.OK).json({
+            message: "Resources retrieved",
+            count: resources.length,
+            data: resources
+        });
+    } catch (error: unknown) {
+        next(error);
+    }
 };
 
-export const getResourceByIdHandler = (req: Request, res: Response): void => {
-    const id = validateId(req.params.id);
+export const getResourceByIdHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const id = validateId(req.params.id as string);
 
-    if (id === null) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-            message: "Invalid resource ID"
+        if (id === null) {
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
+                message: "Invalid resource ID"
+            });
+            return;
+        }
+
+        const resource = getResourceById(id as number);
+
+        if (!resource) {
+            res.status(HTTP_STATUS.NOT_FOUND).json({
+                message: "Resource not found"
+            });
+            return;
+        }
+
+        res.status(HTTP_STATUS.OK).json({
+            message: "Resource retrieved",
+            data: resource
         });
-        return;
+    } catch (error: unknown) {
+        next(error);
     }
-
-    const resource = getResourceById(id);
-
-    if (!resource) {
-        res.status(HTTP_STATUS.NOT_FOUND).json({
-            message: "Resource not found"
-        });
-        return;
-    }
-
-    res.status(HTTP_STATUS.OK).json({
-        message: "Resource retrieved",
-        data: resource
-    });
 };
 
 export const createResourceHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try{
+
+    try {
         const validationError = validateRequiredFields(req.body);
 
         if (validationError) {
@@ -95,76 +104,84 @@ export const createResourceHandler = async (req: Request, res: Response, next: N
                 message: validationError
             });
             return;
-    }
+        }
 
         const newResource = createResource(req.body);
 
         res.status(HTTP_STATUS.CREATED).json({
             message: "Resource created",
             data: newResource
-    }); 
-    }
-    catch(error: unknown){
-        next(error)
+        });
+    } catch (error: unknown) {
+
+        next(error);
     }
 
 };
 
-export const updateResourceHandler = (req: Request, res: Response): void => {
-    const id = validateId(req.params.id);
+export const updateResourceHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const id = validateId(req.params.id as string);
 
-    if (id === null) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-            message: "Invalid resource ID"
+        if (id === null) {
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
+                message: "Invalid resource ID"
+            });
+            return;
+        }
+
+        if (
+            req.body.type !== undefined &&
+            (typeof req.body.type !== "string" || !validTypes.includes(req.body.type))
+        ) {
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
+                message: "Invalid resource type"
+            });
+            return;
+        }
+
+        const updatedResource = updateResource(id as number, req.body);
+
+        if (!updatedResource) {
+            res.status(HTTP_STATUS.NOT_FOUND).json({
+                message: "Resource not found"
+            });
+            return;
+        }
+
+        res.status(HTTP_STATUS.OK).json({
+            message: "Resource updated",
+            data: updatedResource
         });
-        return;
+    } catch (error: unknown) {
+        next(error);
     }
-
-    if (
-        req.body.type !== undefined &&
-        (typeof req.body.type !== "string" || !validTypes.includes(req.body.type))
-    ) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-            message: "Invalid resource type"
-        });
-        return;
-    }
-
-    const updatedResource = updateResource(id, req.body);
-
-    if (!updatedResource) {
-        res.status(HTTP_STATUS.NOT_FOUND).json({
-            message: "Resource not found"
-        });
-        return;
-    }
-
-    res.status(HTTP_STATUS.OK).json({
-        message: "Resource updated",
-        data: updatedResource
-    });
 };
 
-export const deleteResourceHandler = (req: Request, res: Response, next: NextFunction): void => {
-    const id = validateId(req.params.id);
+export const deleteResourceHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const id = validateId(req.params.id as string);
 
-    if (id === null) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-            message: "Invalid resource ID"
+        if (id === null) {
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
+                message: "Invalid resource ID"
+            });
+            return;
+        }
+
+        const deleted = deleteResource(id);
+
+        if (!deleted) {
+            res.status(HTTP_STATUS.NOT_FOUND).json({
+                message: "Resource not found"
+            });
+            return;
+        }
+
+        res.status(HTTP_STATUS.OK).json({
+            message: "Resource deleted"
         });
-        return;
+    } catch (error: unknown) {
+        next(error);
     }
-
-    const deleted = deleteResource(id);
-
-    if (!deleted) {
-        res.status(HTTP_STATUS.NOT_FOUND).json({
-            message: "Resource not found"
-        });
-        return;
-    }
-
-    res.status(HTTP_STATUS.OK).json({
-        message: "Resource deleted"
-    });
 };
