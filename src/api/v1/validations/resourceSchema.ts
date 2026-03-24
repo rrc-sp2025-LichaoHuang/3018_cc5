@@ -6,26 +6,37 @@ import Joi, { ObjectSchema } from "joi";
  *     Post:
  *       type: object
  *       required:
- *         - userId
- *         - content
+ *         - Id
+ *         - title
+ *         - type
+ *         - url
+ *         - description
+ *         - createdAt
  *       properties:
- *         userId:
+ *         id:
+ *           type: number
+ *           description: Unique identifier
+ *           example: 123
+ *         title:
  *           type: string
- *           description: The user's identifier who created the resource
- *           example: "user123"
- *         content:
+ *           description: Resource title
+ *           example: "title"
+ *         type:
  *           type: string
- *           description: The content of the resource item
- *           example: "test content"
- *         createdAt:
+ *           description: Type: article, video, tutorial, documentation
+ *           example: "article"
+ *         url:
  *           type: string
- *           format: date-time
- *           description: The date and time when the item was created
- *           example: "2024-01-15T10:30:00Z"
+ *           description: Link to the resource
+ *           example: "https:www.google.com"
+ *         description:
+ *           type: string
+ *           description: Brief description
+ *           example: "this is example"
  *         updatedAt:
  *           type: string
- *           format: date-time
- *           description: The date and time when the item was last updated
+ *           format: ISO
+ *           description: Creation timestamp (ISO format)
  *           example: "2024-01-20T14:45:00Z"
  */
 
@@ -34,15 +45,33 @@ export const resourceSchemas = {
     // POST /resources - Create new resource
     create: {
         body: Joi.object({
-            userId: Joi.string().required().messages({
-                "any.required": "User ID is required",
-                "string.empty": "User ID cannot be empty",
+            id: Joi.number().required().messages({
+                "any.required": "ID is required",
+                "number.empty": "ID cannot be empty",
             }),
-            content: Joi.string().required().messages({
+            title: Joi.string().required().messages({
                 "any.required": "Content is required",
                 "string.empty": "Content cannot be empty",
             }),
+            type: Joi.string().required().messages({
+                "any.required": "type is required",
+                "string.empty": "type cannot be empty",
+            })
+            .valid("article", "video", "tutorial", "documentation"),
+            url: Joi.number().required().messages({
+                "any.required": "url is required",
+                "number.empty": "url cannot be empty",
+            }),
+            description: Joi.number().required().messages({
+                "any.required": "description is required",
+                "number.empty": "description cannot be empty",
+            }),
+            updatedAt: Joi.number().required().messages({
+                "any.required": "updatedAt is required",
+                "number.empty": "updatedAt cannot be empty",
+            }),
         }),
+        
     },
 
     // GET /resources/:id - Get single resource
