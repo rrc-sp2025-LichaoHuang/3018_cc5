@@ -1,9 +1,6 @@
 import cors, { CorsOptions } from "cors";
 
-/**
- * Read allowed origins from the environment variable.
- * The assignment requires a comma-separated list, so we split it into an array.
- */
+
 const allowedOrigins: string[] = (process.env.ALLOWED_ORIGINS || "")
     .split(",")
     .map((origin) => origin.trim())
