@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { HTTP_STATUS } from "../../../constants/httpConstants";
 import {
     createResource,
@@ -7,6 +7,8 @@ import {
     getResourceById,
     updateResource
 } from "../services/resourceService";
+import { Resource } from "../models/resourceModels";
+
 
 const validTypes = ["article", "video", "tutorial", "documentation"];
 
@@ -42,123 +44,149 @@ const validateId = (idParam: string): number | null => {
     return id;
 };
 
-export const getHealthHandler = (_req: Request, res: Response): void => {
-    res.status(HTTP_STATUS.OK).json({
-        status: "OK",
-        uptime: process.uptime(),
-        timestamp: new Date().toISOString(),
-        version: "1.0.0"
-    });
+export const getHealthHandler = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        res.status(HTTP_STATUS.OK).json({
+            status: "OK",
+            uptime: process.uptime(),
+            timestamp: new Date().toISOString(),
+            version: "1.0.0"
+        });
+    } catch (error) {
+        next(error);
+    }
 };
 
-export const getAllResourcesHandler = (_req: Request, res: Response): void => {
-    const resources = getAllResources();
 
-    res.status(HTTP_STATUS.OK).json({
-        message: "Resources retrieved",
-        count: resources.length,
-        data: resources
-    });
+export const getAllResourcesHandler = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const resources = getAllResources();
+
+        res.status(HTTP_STATUS.OK).json({
+            message: "Resources retrieved",
+            count: resources.length,
+            data: resources
+        });
+    } catch (error) {
+        next(error);
+    }
 };
 
-export const getResourceByIdHandler = (req: Request, res: Response): void => {
-    const id = validateId(req.params.id);
+// Handlers for getResourceById, createResource, updateResource, and deleteResource are implemented below with proper validation and error handling.
+export const getResourceByIdHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const id = validateId(req.params.id);
 
-    if (id === null) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-            message: "Invalid resource ID"
+        if (id === null) {
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
+                message: "Invalid resource ID"
+            });
+            return;
+        }
+
+        const resource = getResourceById(id);
+
+        if (!resource) {
+            res.status(HTTP_STATUS.NOT_FOUND).json({
+                message: "Resource not found"
+            });
+            return;
+        }
+
+        res.status(HTTP_STATUS.OK).json({
+            message: "Resource retrieved",
+            data: resource
         });
-        return;
+    } catch (error) {
+        next(error);
     }
-
-    const resource = getResourceById(id);
-
-    if (!resource) {
-        res.status(HTTP_STATUS.NOT_FOUND).json({
-            message: "Resource not found"
-        });
-        return;
-    }
-
-    res.status(HTTP_STATUS.OK).json({
-        message: "Resource retrieved",
-        data: resource
-    });
 };
 
-export const createResourceHandler = (req: Request, res: Response): void => {
-    const validationError = validateRequiredFields(req.body);
+export const createResourceHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const validationError = validateRequiredFields(req.body);
 
-    if (validationError) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-            message: validationError
+        if (validationError) {
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
+                message: validationError
+            });
+            return;
+        }
+
+        const newResource = createResource(req.body);
+
+        res.status(HTTP_STATUS.CREATED).json({
+            message: "Resource created",
+            data: newResource
         });
-        return;
+    } catch (error) {
+        next(error);
     }
-
-    const newResource = createResource(req.body);
-
-    res.status(HTTP_STATUS.CREATED).json({
-        message: "Resource created",
-        data: newResource
-    });
 };
 
-export const updateResourceHandler = (req: Request, res: Response): void => {
-    const id = validateId(req.params.id);
+export const updateResourceHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
 
-    if (id === null) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-            message: "Invalid resource ID"
+        const id = validateId(req.params.id);
+
+        if (id === null) {
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
+                message: "Invalid resource ID"
+            });
+            return;
+        }
+
+        if (
+            req.body.type !== undefined &&
+            (typeof req.body.type !== "string" || !validTypes.includes(req.body.type))
+        ) {
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
+                message: "Invalid resource type"
+            });
+            return;
+        }
+
+        const updatedResource = updateResource(id, req.body);
+
+        if (!updatedResource) {
+            res.status(HTTP_STATUS.NOT_FOUND).json({
+                message: "Resource not found"
+            });
+            return;
+        }
+
+        res.status(HTTP_STATUS.OK).json({
+            message: "Resource updated",
+            data: updatedResource
         });
-        return;
+    } catch (error) {
+        next(error);
     }
 
-    if (
-        req.body.type !== undefined &&
-        (typeof req.body.type !== "string" || !validTypes.includes(req.body.type))
-    ) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-            message: "Invalid resource type"
-        });
-        return;
-    }
 
-    const updatedResource = updateResource(id, req.body);
+    export const deleteResourceHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const id = validateId(req.params.id);
 
-    if (!updatedResource) {
-        res.status(HTTP_STATUS.NOT_FOUND).json({
-            message: "Resource not found"
-        });
-        return;
-    }
+            if (id === null) {
+                res.status(HTTP_STATUS.BAD_REQUEST).json({
+                    message: "Invalid resource ID"
+                });
+                return;
+            }
 
-    res.status(HTTP_STATUS.OK).json({
-        message: "Resource updated",
-        data: updatedResource
-    });
-};
+            const deleted = deleteResource(id);
 
-export const deleteResourceHandler = (req: Request, res: Response): void => {
-    const id = validateId(req.params.id);
+            if (!deleted) {
+                res.status(HTTP_STATUS.NOT_FOUND).json({
+                    message: "Resource not found"
+                });
+                return;
+            }
 
-    if (id === null) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-            message: "Invalid resource ID"
-        });
-        return;
-    }
-
-    const deleted = deleteResource(id);
-
-    if (!deleted) {
-        res.status(HTTP_STATUS.NOT_FOUND).json({
-            message: "Resource not found"
-        });
-        return;
-    }
-
-    res.status(HTTP_STATUS.OK).json({
-        message: "Resource deleted"
-    });
-};
+            res.status(HTTP_STATUS.OK).json({
+                message: "Resource deleted"
+            });
+        } catch (error) {
+            next(error)
+        }
