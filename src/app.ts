@@ -5,6 +5,7 @@ import {
     consoleLogger,
 } from "./api/v1/middleware/logger";
 import errorHandler from "./api/v1/middleware/errorHandler";
+import resourceRoutes from "./api/v1/routes/resourceRoutes";
 
 /** import the routes **/
 
@@ -19,10 +20,9 @@ if (process.env.NODE_ENV === "production") {
 
 app.use(express.json());
 
+/** use the routes **/
 
-/** Update the api endppoints with appropriate routes **/
-
-
+app.use("/api/v1", resourceRoutes);
 
 
 app.use(errorHandler);
