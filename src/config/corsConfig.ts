@@ -27,14 +27,10 @@ const corsOptions: CorsOptions = {
         callback(new Error("Origin not allowed by CORS"));
     },
 
-    /**
-     * Allow only the methods required by the assignment.
-     */
+
     methods: ["GET", "POST", "PUT", "DELETE"],
 
-    /**
-     * Allow the headers required by the assignment.
-     */
+
     allowedHeaders: ["Content-Type", "Authorization"],
 
     /**
